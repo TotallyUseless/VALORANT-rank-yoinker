@@ -1,6 +1,5 @@
 import requests
 
-
 class Content():
     def __init__(self, Requests, log):
         self.Requests = Requests
@@ -20,7 +19,17 @@ class Content():
         rAgents = requests.get("https://valorant-api.com/v1/agents?isPlayableCharacter=true").json()
         agent_dict = {}
         agent_dict.update({None: None})
+        agent_dict.update({"": ""})
         for agent in rAgents["data"]:
             agent_dict.update({agent['uuid'].lower(): agent['displayName']})
         self.log(f"retrieved agent dict: {agent_dict}")
         return agent_dict
+
+    def get_maps(self):
+        rMaps = requests.get("https://valorant-api.com/v1/maps").json()
+        map_dict = {}
+        map_dict.update({None: None})
+        for Vmap in rMaps["data"]:
+            map_dict.update({Vmap['mapUrl'].lower(): Vmap['displayName']})
+        self.log(f"retrieved map dict: {map_dict}")
+        return map_dict
