@@ -7,9 +7,10 @@ import time
 from prettytable import PrettyTable
 from alive_progress import alive_bar
 import asyncio
+from InquirerPy import inquirer
 
 from src.constants import *
-from src.requests import Requests
+from src.requestsV import Requests
 from src.logs import Logging
 from src.config import Config
 from src.colors import Colors
@@ -30,6 +31,7 @@ from src.errors import Error
 
 from src.stats import Stats
 from src.configurator import configure
+from src.player_stats import PlayerStats
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -52,8 +54,13 @@ try:
     try:
         if len(sys.argv) > 1 and sys.argv[1] == "--config":
             configure()
-            input("press enter to exit...\n")
-            os._exit(0)
+            run_app = inquirer.confirm(
+                message="Do you want to run vRY now?", default=True
+            ).execute()
+            if run_app:
+                os.system('cls')
+            else:
+                os._exit(0)
     except Exception as e:
         print("Something went wrong while running configurator!")
         log(f"configurator encountered an error: {str(e)}")
@@ -69,6 +76,7 @@ try:
     cfg = Config(log)
 
     rank = Rank(Requests, log, before_ascendant_seasons)
+    pstats = PlayerStats(Requests, log, cfg)
 
     content = Content(Requests, log)
 
@@ -139,10 +147,12 @@ try:
                     if game_state != None:
                         run = False
                     time.sleep(2)
+                log(f"first game state: {game_state}")
             else:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 game_state = loop.run_until_complete(Wss.recconect_to_websocket(game_state))
+                log(f"new game state: {game_state}")
                 loop.close()
             firstTime = False
             # loop = asyncio.new_event_loop()
@@ -246,13 +256,20 @@ try:
                                     party_icon = partyIcons[party]
                         playerRank = rank.get_rank(player["Subject"], seasonID)
                         rankStatus = playerRank[1]
-                        while not rankStatus:
-                            print("You have been rate limited, 😞 waiting 10 seconds!")
-                            time.sleep(10)
-                            playerRank = rank.get_rank(player["Subject"], seasonID)
-                            rankStatus = playerRank[1]
+                        #useless code since rate limit is handled in the requestsV
+                        # while not rankStatus:
+                        #     print("You have been rate limited, 😞 waiting 10 seconds!")
+                        #     time.sleep(10)
+                        #     playerRank = rank.get_rank(player["Subject"], seasonID)
+                        #     rankStatus = playerRank[1]
                         playerRank = playerRank[0]
+
+                        hs = pstats.get_stats(player["Subject"])
+
                         player_level = player["PlayerIdentity"].get("AccountLevel")
+
+
+
                         if player["PlayerIdentity"]["Incognito"]:
                             Namecolor = colors.get_color_from_team(player["TeamID"],
                                                             names[player["Subject"]],
@@ -267,7 +284,7 @@ try:
                         lastTeam = player['TeamID']
                         lastTeamBoolean = True
                         if player["PlayerIdentity"]["HideAccountLevel"]:
-                            if player["Subject"] == Requests.puuid or player["Subject"] in partyMembersList:
+                            if player["Subject"] == Requests.puuid or player["Subject"] in partyMembersList or hide_levels == False:
                                 PLcolor = colors.level_to_color(player_level)
                             else:
                                 PLcolor = ""
@@ -299,6 +316,9 @@ try:
                         # LEADERBOARD
                         leaderboard = playerRank[2]
 
+                        hs = colors.get_hs_gradient(hs)
+                        wr = colors.get_wr_gradient(playerRank[4])
+
                         if(int(leaderboard)>0):
                             is_leaderboard_needed = True
 
@@ -313,6 +333,8 @@ try:
                                               rr,
                                               peakRank,
                                               leaderboard,
+                                              hs,
+                                              wr,
                                               level
                                               ])
                         stats.save_data(
@@ -367,12 +389,16 @@ try:
                                 partyCount += 1
                         playerRank = rank.get_rank(player["Subject"], seasonID)
                         rankStatus = playerRank[1]
-                        while not rankStatus:
-                            print("You have been rate limited, 😞 waiting 10 seconds!")
-                            time.sleep(10)
-                            playerRank = rank.get_rank(player["Subject"], seasonID)
-                            rankStatus = playerRank[1]
+                        #useless code since rate limit is handled in the requestsV
+                        # while not rankStatus:
+                        #     print("You have been rate limited, 😞 waiting 10 seconds!")
+                        #     time.sleep(10)
+                        #     playerRank = rank.get_rank(player["Subject"], seasonID)
+                        #     rankStatus = playerRank[1]
                         playerRank = playerRank[0]
+
+                        hs = pstats.get_stats(player["Subject"])
+
                         player_level = player["PlayerIdentity"].get("AccountLevel")
                         if player["PlayerIdentity"]["Incognito"]:
                             NameColor = colors.get_color_from_team(pregame_stats['Teams'][0]['TeamID'],
@@ -384,7 +410,7 @@ try:
                                                             player["Subject"], Requests.puuid, party_members=partyMembersList)
 
                         if player["PlayerIdentity"]["HideAccountLevel"]:
-                            if player["Subject"] == Requests.puuid or player["Subject"] in partyMembersList:
+                            if player["Subject"] == Requests.puuid or player["Subject"] in partyMembersList or hide_levels == False:
                                 PLcolor = colors.level_to_color(player_level)
                             else:
                                 PLcolor = ""
@@ -424,6 +450,9 @@ try:
                         # LEADERBOARD
                         leaderboard = playerRank[2]
 
+                        hs = colors.get_hs_gradient(hs)
+                        wr = colors.get_wr_gradient(playerRank[4])
+
                         if(int(leaderboard)>0):
                             is_leaderboard_needed = True
 
@@ -439,6 +468,8 @@ try:
                                               rr,
                                               peakRank,
                                               leaderboard,
+                                              hs,
+                                              wr,
                                               level,
                                               ])
                         bar()
@@ -453,12 +484,16 @@ try:
                         party_icon = PARTYICONLIST[0]
                         playerRank = rank.get_rank(player["Subject"], seasonID)
                         rankStatus = playerRank[1]
-                        while not rankStatus:
-                            print("You have been rate limited, 😞 waiting 10 seconds!")
-                            time.sleep(10)
-                            playerRank = rank.get_rank(player["Subject"], seasonID)
-                            rankStatus = playerRank[1]
+                        #useless code since rate limit is handled in the requestsV
+                        # while not rankStatus:
+                        #     print("You have been rate limited, 😞 waiting 10 seconds!")
+                        #     time.sleep(10)
+                        #     playerRank = rank.get_rank(player["Subject"], seasonID)
+                        #     rankStatus = playerRank[1]
                         playerRank = playerRank[0]
+
+                        hs = pstats.get_stats(player["Subject"])
+
                         player_level = player["PlayerIdentity"].get("AccountLevel")
                         PLcolor = colors.level_to_color(player_level)
 
@@ -480,6 +515,9 @@ try:
                         # LEADERBOARD
                         leaderboard = playerRank[2]
 
+                        hs = colors.get_hs_gradient(hs)
+                        wr = colors.get_wr_gradient(playerRank[4])
+
                         if(int(leaderboard)>0):
                             is_leaderboard_needed = True
 
@@ -494,6 +532,8 @@ try:
                                               rr,
                                               peakRank,
                                               leaderboard,
+                                              hs,
+                                              wr,
                                               level
                                               ])
                         # table.add_rows([])
@@ -507,7 +547,7 @@ try:
                 table.set_title(f"VALORANT status: {title}")
             server = ""
             if title is not None:
-                if(not is_leaderboard_needed):
+                if cfg.get_feature_flag("auto_hide_leaderboard") and (not is_leaderboard_needed):
                     table.set_runtime_col_flag('Pos.', False)
 
                 table.display()
@@ -518,8 +558,10 @@ try:
                                         #     "agent": curr_player_stat["agent"],
                                         #     "time_diff": time.time() - curr_player_stat["time"]
                                         # })
-                for played in already_played_with:
-                    print(f"\nAlready played with {played['name']} (last {played['agent']}) {stats.convert_time(played['time_diff'])} ago. (Total played {played['times']} times)")
+                if cfg.get_feature_flag("last_played"):
+                    for played in already_played_with:
+                        print("\n") 
+                        print(f"Already played with {played['name']} (last {played['agent']}) {stats.convert_time(played['time_diff'])} ago. (Total played {played['times']} times)")
                 already_played_with = []
         if cfg.cooldown == 0:
             input("Press enter to fetch again...")
@@ -527,6 +569,10 @@ try:
             # time.sleep(cfg.cooldown)
             pass
 except:
+    #lame implementation of fast ctrl+c exit
+    if str(traceback.format_exc()[-18:-1]) == "KeyboardInterrupt":
+        os._exit(1)
+
     log(traceback.format_exc())
     print(color(
         "The program has encountered an error. If the problem persists, please reach support"

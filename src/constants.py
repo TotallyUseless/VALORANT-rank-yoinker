@@ -1,9 +1,10 @@
-from colr import color
 import requests
+from colr import color
 
-version = "2.1"
+version = "2.2"
 enablePrivateLogging = False
 hide_names = True
+hide_levels = True
 
 
 before_ascendant_seasons = [
@@ -134,3 +135,21 @@ WEAPONS = [
     "Odin",
     "Melee",
 ]
+
+DEFAULT_CONFIG = {
+        "cooldown": 10,
+        "port": 1100,
+        "weapon": "Vandal",
+        "table": {
+            "skin": True,
+            "rr": True,
+            "peakrank": True,
+            "leaderboard": True,
+            "headshot_percent": True,
+            "winrate": True
+        },
+        "flags": {
+            "last_played": True,
+            "auto_hide_leaderboard": True
+        }
+    }

@@ -23,7 +23,7 @@ class Requests:
         self.lockfile = self.get_lockfile()
 
         self.puuid = ''
-        #fetch puuid so its avaible outsite
+        #fetch puuid so its avaible outside
         self.get_headers()
 
     def check_version(self):
@@ -45,14 +45,15 @@ class Requests:
             status_color = (255, 0, 0) if not rStatus["status_good"] else (0, 255, 0)
             print(color(rStatus["message_to_display"], fore=status_color))
             
-    def fetch(self, url_type: str, endpoint: str, method: str):
+    def fetch(self, url_type: str, endpoint: str, method: str, rate_limit_seconds=5):
         try:
             if url_type == "glz":
                 response = requests.request(method, self.glz_url + endpoint, headers=self.get_headers(), verify=False)
                 self.log(f"fetch: url: '{url_type}', endpoint: {endpoint}, method: {method},"
                     f" response code: {response.status_code}")
                 if not response.ok:
-                    time.sleep(5)
+                    self.log("response not ok glz endpoint")
+                    time.sleep(rate_limit_seconds+5)
                     self.headers = {}
                     self.fetch(url_type, endpoint, method)
                 return response.json()
@@ -61,10 +62,16 @@ class Requests:
                 self.log(
                     f"fetch: url: '{url_type}', endpoint: {endpoint}, method: {method},"
                     f" response code: {response.status_code}")
+                if response.status_code == 404:
+                    return response
                 if not response.ok:
-                    time.sleep(5)
+                    if response.status_code != 429:
+                        self.log(f"response not ok pd endpoint, {response.text}")
+                    else:
+                        self.log(f"response not ok pd endpoint, {response.text}")
+                    time.sleep(rate_limit_seconds+5)
                     self.headers = {}
-                    self.fetch(url_type, endpoint, method)
+                    return self.fetch(url_type, endpoint, method, rate_limit_seconds=rate_limit_seconds+5)
                 return response
             elif url_type == "local":
                 local_headers = {'Authorization': 'Basic ' + base64.b64encode(
@@ -144,6 +151,5 @@ class Requests:
                 'X-Riot-ClientVersion': self.get_current_version(),
                 "User-Agent": "ShooterGame/13 Windows/10.0.19043.1.256.64bit"
             }
-        return headers
-
-
+            self.headers = headers
+        return self.headers
