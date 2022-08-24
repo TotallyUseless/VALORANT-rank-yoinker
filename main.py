@@ -4,7 +4,6 @@ import urllib3
 import os
 import sys
 import time
-from prettytable import PrettyTable
 from alive_progress import alive_bar
 import asyncio
 from InquirerPy import inquirer
@@ -63,7 +62,8 @@ try:
                 os._exit(0)
     except Exception as e:
         print("Something went wrong while running configurator!")
-        log(f"configurator encountered an error: {str(e)}")
+        log(f"configurator encountered an error")
+        log(str(traceback.format_exc()))
         input("press enter to exit...\n")
         os._exit(1)
 
@@ -103,7 +103,7 @@ try:
 
     stats = Stats()
 
-    Wss = Ws(Requests.lockfile, Requests)
+    Wss = Ws(Requests.lockfile, Requests, cfg)
     # loop = asyncio.new_event_loop()
     # asyncio.set_event_loop(loop)
     # loop.run_forever()
@@ -126,10 +126,12 @@ try:
     # loop.run_until_complete(Wss.conntect_to_websocket(game_state))
     # loop.close()
     firstTime = True
+    firstPrint = True
     while True:
         table.clear()
         table.set_default_field_names()
         table.reset_runtime_col_flags()
+
         try:
 
 
@@ -169,6 +171,9 @@ try:
                 "PREGAME": color('Agent Select', fore=(103, 237, 76)),
                 "MENUS": color('In-Menus', fore=(238, 241, 54)),
             }
+
+            if (not firstPrint) and cfg.get_feature_flag("pre_cls"):
+                    os.system('cls')
 
             is_leaderboard_needed = False
 
@@ -550,7 +555,13 @@ try:
                 if cfg.get_feature_flag("auto_hide_leaderboard") and (not is_leaderboard_needed):
                     table.set_runtime_col_flag('Pos.', False)
 
+                if game_state == "MENUS":
+                    table.set_runtime_col_flag('Agent',False)
+                    table.set_runtime_col_flag('Skin',False)
+
                 table.display()
+                firstPrint = False
+
                 print(f"VALORANT rank yoinker v{version}")
                                         #                 {
                                         #     "times": sum(stats_data[player["Subject"]]),
@@ -568,11 +579,10 @@ try:
         else:
             # time.sleep(cfg.cooldown)
             pass
-except:
+except KeyboardInterrupt:
     #lame implementation of fast ctrl+c exit
-    if str(traceback.format_exc()[-18:-1]) == "KeyboardInterrupt":
-        os._exit(1)
-
+    os._exit(0)
+except:
     log(traceback.format_exc())
     print(color(
         "The program has encountered an error. If the problem persists, please reach support"

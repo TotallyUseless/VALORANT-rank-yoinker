@@ -28,7 +28,7 @@ class Requests:
 
     def check_version(self):
         # checking for latest release
-        r = requests.get("https://api.github.com/repos/isaacKenyon/VALORANT-rank-yoinker/releases")
+        r = requests.get("https://api.github.com/repos/zayKenyon/VALORANT-rank-yoinker/releases")
         json_data = r.json()
         release_version = json_data[0]["tag_name"]  # get release version
         link = json_data[0]["assets"][0]["browser_download_url"]  # link for the latest release
@@ -40,7 +40,7 @@ class Requests:
     def check_status(self):
         # checking status
         rStatus = requests.get(
-            "https://raw.githubusercontent.com/isaacKenyon/VALORANT-rank-yoinker/main/status.json").json()
+            "https://raw.githubusercontent.com/zayKenyon/VALORANT-rank-yoinker/main/status.json").json()
         if not rStatus["status_good"] or rStatus["print_message"]:
             status_color = (255, 0, 0) if not rStatus["status_good"] else (0, 255, 0)
             print(color(rStatus["message_to_display"], fore=status_color))
@@ -51,8 +51,11 @@ class Requests:
                 response = requests.request(method, self.glz_url + endpoint, headers=self.get_headers(), verify=False)
                 self.log(f"fetch: url: '{url_type}', endpoint: {endpoint}, method: {method},"
                     f" response code: {response.status_code}")
+                if response.json().get("errorCode") == "BAD_CLAIMS":
+                    self.headers = {}
+                    return self.fetch(url_type, endpoint, method)
                 if not response.ok:
-                    self.log("response not ok glz endpoint")
+                    self.log("response not ok glz endpoint: " + response.text)
                     time.sleep(rate_limit_seconds+5)
                     self.headers = {}
                     self.fetch(url_type, endpoint, method)
@@ -64,6 +67,11 @@ class Requests:
                     f" response code: {response.status_code}")
                 if response.status_code == 404:
                     return response
+
+                if response.json().get("errorCode") == "BAD_CLAIMS":
+                    self.headers = {}
+                    return self.fetch(url_type, endpoint, method)
+
                 if not response.ok:
                     if response.status_code != 429:
                         self.log(f"response not ok pd endpoint, {response.text}")
