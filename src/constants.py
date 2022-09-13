@@ -1,11 +1,24 @@
 import requests
 from colr import color
 
-version = "2.22"
+version = "2.50"
 enablePrivateLogging = True
 hide_names = True
 hide_levels = True
 
+
+gamemodes = {
+    "newmap": "New Map",
+    "competitive": "Competitive",
+    "unrated": "Unrated",
+    "spikerush": "Spike Rush",
+    "deathmatch": "Deathmatch",
+    "ggteam": "Escalation",
+    "onefa": "Replication",
+    "custom": "Custom",
+    "snowball": "Snowball Fight",
+    "": "Custom",
+}
 
 before_ascendant_seasons = [
     "0df5adb9-4dcb-6899-1306-3e9860661dd3",
@@ -146,12 +159,15 @@ DEFAULT_CONFIG = {
             "peakrank": True,
             "leaderboard": True,
             "headshot_percent": True,
-            "winrate": True
+            "winrate": True,
+            "kd": False
         },
         "flags": {
             "last_played": True,
             "auto_hide_leaderboard": True,
             "pre_cls": False,
-            "game_chat": False
+            "game_chat": True,
+            "peak_rank_act": True,
+            "discord_rpc": True
         }
     }
