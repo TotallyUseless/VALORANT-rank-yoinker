@@ -1,7 +1,7 @@
 import requests
 from colr import color
 
-version = "2.50"
+version = "2.51"
 enablePrivateLogging = True
 hide_names = True
 hide_levels = True
@@ -11,6 +11,7 @@ gamemodes = {
     "newmap": "New Map",
     "competitive": "Competitive",
     "unrated": "Unrated",
+    "swiftplay": "Swiftplay",
     "spikerush": "Spike Rush",
     "deathmatch": "Deathmatch",
     "ggteam": "Escalation",
